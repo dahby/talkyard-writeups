@@ -176,43 +176,28 @@ With the function scheduled, we now have a session within our Context Warehouse 
 
 ## Access the Context Warehouse data using Conversation Builder
 
-We can now responsibly query for data from the Context Warehouse for use within Conversation Builder. The following example demonstrates how to set up that integration to check for the estimated wait time for a particular skill.
+We can now responsibly query for data from the Context Warehouse for use within Conversation Builder. The following example demonstrates using [Context Session Store methods](https://developers.liveperson.com/conversation-builder-scripting-functions-manage-the-context-session-store.html) to retrieve and display the relevant information.
 
-1. In your Conversation Builder bot, create the following bot variables:
+1. Ensure you have access to the Context API 
+   * From the Conversational AI menu of the Conversational Cloud, navigate into *Bot Accounts* and select your account
+   * In *Account Details*, toggle the *Enable Context API* switch to *on* 
+   * Select the *Use Conversational Cloud Site ID* option and enter your account number
+
+> Note: If you do not have access to this tool or process, contact your LivePerson account representative. Alternatively, Context Warehouse data can be accessed via API integration, however make sure to follow best practices in safeguarding secrets and API keys by taking advantage of environment variables.
+  
+2. Navigate to your bot in Conversation Builder. You will now have access to Context Session Store methods in Global Functions, as well as Pre/Post process code editors for each interaction.
+3. Test out your ability to access this data by creating a new text interaction with the following pre-process code included:
    ```js
-   var baseUrl = 'z1.context.liveperson.net'; //update based on region US/EMEA/APAC
-   var accountId = 'XXXXXXX'; //your conversational cloud account id
-   var mavenApiKey = 'XXXXXXX'; //conversation orchestrator api key
-   var mavenNamespace = 'messaging-operations-api'; //the namespace created in conversation orchestrator
-   var mavenSessionId = 'current-queue-health'; // session created within namespace using FaaS
-   var skillId = 'XXXXXXXX'; //update with the skill ID that you will be transferring to. Can also be set based on routing during a conversational flow
-
-   botContext.setBotVariable('baseUrl', baseUrl, true, false);
-   botContext.setBotVariable('accountId', accountId, true, false);
-   botContext.setBotVariable('mavenApiKey', mavenApiKey, true, false);
-   botContext.setBotVariable('mavenNamespace', mavenNamespace, true, false);
-   botContext.setBotVariable('mavenSessionId', mavenSessionId, true, false);
-   botContext.setBotVariable('skillId', skillId, true, false);
+    var e = botContext.getGlobalContextData('messaging-operations-api', 'skillsMetrics');
+    var skillId = botContext.getBotVariable('skillId');
+    var awt = e[skillId].avgWaitTimeForAgentAssignment_AfterTransferFromAgent;
+    botContext.setBotVariable('awt', awt, true, false);
    ```
-   These variables will be used within the Integration which calls the Context Warehouse.
 
-  
-2. Navigate to the Integrations tab and create a new API integration with the following details:
-   * **Integration Name**: `currentQueueHealth`
-   * **Integration Type**: `API`
-   * **Method**: `GET`
-   * **URL**: `https://{$botContext.baseUrl}/v1/account/{$botContext.accountId}/{$botContext.mavenNamespace}/{$botContext.mavenSessionId}/properties`
-   * **Request Headers**: 
-     * `Content-Type`: `application/json`
-     * `maven-api-key`: `{$botContext.mavenApiKey}`
-  
-    The **Custom Data Fields** are used to save the resulting Context Warehouse data for use within our bot. In this case, we will pull the `avgWaitTimeForAgentAssignment_AfterTransferFromAgent` value for our Skill ID and save to a key of `skillAvgWaitTime`.
-    
-    * *Custom Data Fields*:
-      * `skillAvgWaitTime`: `{$.api_currentQueueHealth.skillsMetrics.{$botContext.skillId}.avgWaitTimeForAgentAssignment_AfterTransferFromAgent}`
+  This code queries the Context Warehouse for the messaging operations api data and retrieves the average wait time for the skill in question. This information can be useful in setting expectations for your users prior to escalation. 
 
-3. After saving the integration, test out the new Context Warehouse integration to ensure that we are getting appropriate data back. Do so by creating a new *Integration* interaction, followed by a text interaction which reads off the values.
+> Note: The screenshot above displays the call in a demo environment. ‘-1’ is the default value if there is no relevant data being returned, and as this is a demo deployment, there currently isn’t a wait time. However, by returning the -1 value, we can see that we are accessing the correct field in our data.
 
 ## Conclusion
 
-With our integration in place, we are now able to responsibly use the data from our reporting dashboard API to make decisions in our bot automations. While the specific use case may vary  based on your brands needs, the steps outlined in this guide provide a foundation to query this data and make appropriate routing and expectation setting decision for your users.
+We are now able to responsibly use the data from our reporting dashboard API to make decisions in our bot automations. While the specific use case may vary based on the needs of your brand, the steps outlined in this guide provide a foundation to query this data and make appropriate routing and expectation setting decisions for your users.
