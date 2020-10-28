@@ -15,8 +15,8 @@ This guide assumes that you have access to the following:
 This guide will cover the following steps to provide access to data from the [Messaging Current Queue Health API](https://developers.liveperson.com/messaging-operations-api-methods-messaging-current-queue-health.html):
 
 1. Create a new namespace in the Context Warehouse to serve as our cache.
-2. Create a `currentQueueHealth` FaaS function to call the API and send the results to a newly created Context Warehouse session.
-3. Schedule invocation of our function to run every 5 minutes, to continually update the session store.
+2. Create a `currentQueueHealth` FaaS function to call the API and send the results to the newly created Context Warehouse namespace.
+3. Schedule invocation of our function to run every 5 minutes, to continually update the store.
 4. Create the Conversation Builder integration to pull in the cached data.
 
 ## Set up Context Warehouse
@@ -49,6 +49,7 @@ The [Context Session Store](https://developers.liveperson.com/conversation-orche
 		```
 
      * In this example, this namespace is titled `messaging-operations-api`, as the *Messaging Current Queue Health* method belongs to it. Take note to what the namespace is called, as it will be used when updating the contained values.
+  
 4. Sending this request will result in a `204` status if constructed correctly. To verify that the new namespace has been created, send a GET request to the same URL, omitting the **body** and the return will show all namespaces created under your account.
 
 A namespace has now been created which will house our cache of data from the Messaging Operations API. Next, we'll create a new scheduled FaaS invocation to populate this namespace on regular intervals.
@@ -76,7 +77,7 @@ A namespace has now been created which will house our cache of data from the Mes
 
 5. Complete the *Function Description* section with the following:
    * **Function Name**: currentQueueHealth
-   * **Description**: Retrieve current queue information on scheduled intervals and update a session in Context Warehouse.
+   * **Description**: Retrieve current queue info on scheduled intervals and update a namespace in Context Warehouse.
 
 	Click *Create Function*
 
@@ -93,17 +94,18 @@ function lambda(input, callback) {
   // Obtain a secretClient instance from the Toolbelt to access your saved Conversation Orchestrator key
   const secretClient = Toolbelt.SecretClient();
 
-  // Context Warehouse URL 
-  const contextWarehouseUrl = 'https://z1.context.liveperson.net/v1/account/6585768/messaging-operations-api/current-queue-health/properties';
+  // Context Warehouse URL. See the *Set custom namespace properties within a session* method for documentation https://developers.liveperson.com/conversation-orchestrator-context-warehouse-context-session-store.html#methods
+  const contextWarehouseUrl = 'https://z1.context.liveperson.net/v1/account/{accountNumber}/messaging-operations-api/properties';
 
-  // Variables to access Current Queue Health API
+  // Variables to access API using LpClient instance. See documentation @ https://developers.liveperson.com/liveperson-functions-developing-with-faas-toolbelt.html#liveperson-client. Replace {accountNumber} with your Conversational Cloud account number.
   const lpServiceName = 'leDataReporting';
-  const apiEndpoint = '/operations/api/account/6585768/msgqueuehealth/current/?v=1';
+  const apiEndpoint = '/operations/api/account/{accountNumber}/msgqueuehealth/current/?v=1';
   const apiOptions = {
     method: 'GET',
     json: true
   }
 
+  // Updates context warehouse messaging-operations-api namespace
   function updateContextWarehouse(data, key) {
     httpClient(contextWarehouseUrl, {
       method: "PATCH", //HTTP VERB
@@ -123,6 +125,7 @@ function lambda(input, callback) {
     .catch(err => console.error(err))
   }
 
+  // retrieves conversation orchestrator api key from secret store
   function fetchSecret() {
     return secretClient
       .readSecret("mavenApiKey")
@@ -131,6 +134,7 @@ function lambda(input, callback) {
     })
   }
 
+  // LpClient instance calls api and passes result to the updateContextWarehouse function
   lpClient(lpServiceName, apiEndpoint, apiOptions)
     .then(response => {
         console.info(response)
@@ -150,9 +154,9 @@ function lambda(input, callback) {
 7. After saving, deploy the function using the three dot menu at the end of the function's row. Once deployed, invoke the function to test and ensure that it is working. If successful, the logs should read `Successfully updated Context Warehouse`.
 8. Verify using Postman that the namespace and session have been updated in the Context Warehouse. To test, provide the following details to your API client:
    * **Method**: `GET`
-   * **URL**: `https://{baseUrl}/v1/account/{accountNumber}/messaging-operations-api/current-queue-health/properties`
+   * **URL**: `https://{baseUrl}/v1/account/{accountNumber}/messaging-operations-api/properties`
       *  Replace `{baseUrl}` with the correct URL for your environment, found [here](https://developers.liveperson.com/conversation-orchestrator-context-warehouse-context-session-store.html#methods).
- 	 * Replace `{account}` with your Conversational Cloud account number.
+   	 * Replace `{accountNumber}` with your Conversational Cloud account number.
 
 	* **Headers**: 
 		```
