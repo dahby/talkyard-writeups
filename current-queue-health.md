@@ -56,8 +56,17 @@ A namespace has now been created which will house our cache of data from the Mes
 ## Create and schedule a FaaS function
 
 1. Navigate to **Functions** using the grid menu in the lower left of Conversational Cloud.
-2. Navigate to the *Functions* tab on the left and select the *Create a Function* button.
-3. Complete the *Coding Details* section with the following:
+2. Save your Conversation Orchestrator API key to your Secret Storage.
+   1. Click the setting icon at the bottom of the left hand menu.
+   2. Click on the *Secret Storage* menu
+   3. Click the *Add a secret* button
+   4. Create a new secret with the following:
+      * **Key**: `mavenApiKey`
+      * **Type**: `String`
+      * **Value**: Your Conversation Orchestrator API key
+  
+3. Navigate to the *Functions* tab on the left and select the *Create a Function* button.
+4. Complete the *Coding Details* section with the following:
    * **Event**: No Event
    * **Template**: Greeting Template
    * **Access to external domains?**: No
@@ -65,13 +74,14 @@ A namespace has now been created which will house our cache of data from the Mes
 
 	Click *Continue*
 
-4. Complete the *Function Description* section with the following:
+5. Complete the *Function Description* section with the following:
    * **Function Name**: currentQueueHealth
    * **Description**: Retrieve current queue information on scheduled intervals and update a session in Context Warehouse.
 
 	Click *Create Function*
 
-5. In the resulting code editor screen, replace the existing code with the following:
+
+6. In the resulting code editor screen, replace the existing code with the following:
 ```js
 function lambda(input, callback) {
   // Importing the FaaS Toolbelt
@@ -80,27 +90,26 @@ function lambda(input, callback) {
   const httpClient = Toolbelt.HTTPClient(); // For API Docs look @ https://www.npmjs.com/package/request-promise
   // Obtain an lpClient Instance from the Toolbelt
   const lpClient = Toolbelt.LpClient();
+  // Obtain a secretClient instance from the Toolbelt to access your saved Conversation Orchestrator key
+  const secretClient = Toolbelt.SecretClient();
 
-  // Variables to access API using LpClient instance. See documentation @ https://developers.liveperson.com/liveperson-functions-developing-with-faas-toolbelt.html#liveperson-client. Replace {accountNumber} with your Conversational Cloud account number.
+  // Context Warehouse URL 
+  const contextWarehouseUrl = 'https://z1.context.liveperson.net/v1/account/6585768/messaging-operations-api/current-queue-health/properties';
+
+  // Variables to access Current Queue Health API
   const lpServiceName = 'leDataReporting';
-  const apiEndpoint = '/operations/api/account/{accountNumber}/msgqueuehealth/current/?v=1';
+  const apiEndpoint = '/operations/api/account/6585768/msgqueuehealth/current/?v=1';
   const apiOptions = {
     method: 'GET',
     json: true
   }
 
-	// Set to Conversation Orchestrator API key
-  const mavenApiKey = 'XXXXXXXXXXX';
-  // Context Warehouse URL. See the *Set custom namespace properties within a session* method for documentation https://developers.liveperson.com/conversation-orchestrator-context-warehouse-context-session-store.html#methods
-	const contextWarehouseUrl = 'https://z1.context.liveperson.net/v1/account/{accountNumber}/messaging-operations-api/current-queue-health/properties';
-	
-  // Updates context warehouse messaging-operations-api namespace with current-queue-health as the session
-  function updateContextWarehouse(data) {
+  function updateContextWarehouse(data, key) {
     httpClient(contextWarehouseUrl, {
       method: "PATCH", //HTTP VERB
         headers: {
             "Content-Type": "application/json",
-            "maven-api-key": mavenApiKey
+            "maven-api-key": key
         }, //Your headers
         body: data,
         simple: false, //IF true => Status Code != 2xx & 3xx will throw
@@ -108,17 +117,28 @@ function lambda(input, callback) {
         resolveWithFullResponse: false //IF true => Includes Status Code, Headers etc.
     })
     .then(response => {
-        console.info('Successfully updated Context Warehouse')
+        console.info('Successfully updated Context Warehouse');
         callback(null, response)
     })
     .catch(err => console.error(err))
   }
 
-  // LpClient instance calls api and passes result to the updateContextWarehouse function
+  function fetchSecret() {
+    return secretClient
+      .readSecret("mavenApiKey")
+      .then(mySecret => {
+        return mySecret.value;
+    })
+  }
+
   lpClient(lpServiceName, apiEndpoint, apiOptions)
     .then(response => {
         console.info(response)
-        updateContextWarehouse(response);
+        fetchSecret()
+        .then(secret => {
+          updateContextWarehouse(response, secret);
+        })
+        
     }).catch(err => {
         callback(null, err)
     })
@@ -127,8 +147,8 @@ function lambda(input, callback) {
 
    * Using the HTTP and LP Clients from the `lp-faas-toolbelt` package, this function calls the current queue health API and passes that to a function to call and update the context Warehouse.
 
-6. After saving, deploy the function using the three dot menu at the end of the function's row. Once deployed, invoke the function to test and ensure that it is working. If successful, the logs should read `Successfully updated Context Warehouse`.
-7. Verify using Postman that the namespace and session have been updated in the Context Warehouse. To test, provide the following details to your API client:
+7. After saving, deploy the function using the three dot menu at the end of the function's row. Once deployed, invoke the function to test and ensure that it is working. If successful, the logs should read `Successfully updated Context Warehouse`.
+8. Verify using Postman that the namespace and session have been updated in the Context Warehouse. To test, provide the following details to your API client:
    * **Method**: `GET`
    * **URL**: `https://{baseUrl}/v1/account/{accountNumber}/messaging-operations-api/current-queue-health/properties`
       *  Replace `{baseUrl}` with the correct URL for your environment, found [here](https://developers.liveperson.com/conversation-orchestrator-context-warehouse-context-session-store.html#methods).
@@ -145,8 +165,8 @@ function lambda(input, callback) {
 
     If successful, the call to the Context Warehouse will display the results of the Messaging Current Queue Health API.
 
-8. Schedule the FaaS invocation by selecting the *Schedules* tab from the left hand menu. Tap the *Create a schedule* button and select the newly deployed function from the resulting dropdown.
-9. Schedule the function invocation and whichever interval fits the use case for your brand. For this example, entering `/5` in the *Minutes* field will result in this function running and updating the Context Warehouse every 5 minutes.
+9. Schedule the FaaS invocation by selecting the *Schedules* tab from the left hand menu. Tap the *Create a schedule* button and select the newly deployed function from the resulting dropdown.
+10. Schedule the function invocation and whichever interval fits the use case for your brand. For this example, entering `/5` in the *Minutes* field will result in this function running and updating the Context Warehouse every 5 minutes.
 
 With the function scheduled, we now have a session within our Context Warehouse being updated with a reasonable approximation of the current queue health, including information on the estimated wait time. 
 
