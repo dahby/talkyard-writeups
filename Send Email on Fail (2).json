@@ -1,0 +1,517 @@
+{
+  "hash": "1032944931",
+  "bot": {
+    "id": "cf2bb86a-452c-4908-8576-f4ac62191c0a",
+    "name": "Send Email on Fail",
+    "chatBotType": "CUSTOMER_FACING_BOT",
+    "description": "Update the 'ownerEmail' bot variable in Global Functions to where you want to receive the email",
+    "status": "NEW",
+    "getStartedButtonPayload": "hi",
+    "creationTime": 1602714040970,
+    "modificationTime": 1603989660691,
+    "demo": false,
+    "skipNLP": false,
+    "language": "en-US",
+    "botAttributes": {
+      "ENABLE_AGENT_ANNOTATIONS": "false",
+      "ENABLE_DEBUG": "true"
+    },
+    "sessionLength": 0,
+    "passThroughMode": false,
+    "transcriptDisabled": false,
+    "version": "2",
+    "publicBot": false,
+    "readOnly": false
+  },
+  "responder": [
+    {
+      "chatbotId": "cf2bb86a-452c-4908-8576-f4ac62191c0a",
+      "id": "bbb30a80-5223-4b3b-84a0-8a2d6a242371",
+      "name": "Store_Locator",
+      "webhook": "https://5ed69a5fc2ca2300162c67f1.mockapi.io/api/v1/stores/{$botContext.endpoint}",
+      "method": "GET",
+      "defaultValues": [
+        {
+          "key": "title"
+        },
+        {
+          "key": "subTitle"
+        },
+        {
+          "key": "image"
+        },
+        {
+          "key": "itemUrl"
+        }
+      ],
+      "customDataFields": [
+        {
+          "key": "stores",
+          "value": "{$.api_StoreLocator.stores[i].city}"
+        }
+      ],
+      "results": {
+        "type": "TEXT",
+        "tile": {
+          "tileData": [
+            {
+              "buttons": [],
+              "quickReplyList": []
+            }
+          ]
+        }
+      },
+      "group": "Responders",
+      "responseDataVariable": "Store_Locator",
+      "integrationType": "API",
+      "tangoContextEnabled": false
+    },
+    {
+      "chatbotId": "cf2bb86a-452c-4908-8576-f4ac62191c0a",
+      "id": "fdc0383d-9b45-423f-a0ee-516f953dd615",
+      "name": "Send_Email",
+      "fileUrl": "{{file_url}}",
+      "method": "POST",
+      "defaultValues": [
+        {
+          "key": "title"
+        },
+        {
+          "key": "subTitle"
+        },
+        {
+          "key": "image"
+        },
+        {
+          "key": "itemUrl"
+        }
+      ],
+      "postBody": "{\"chatBotId\":\"{$chatBotId}\",\"from\":null,\"to\":\"{$botContext.ownerEmail}\",\"replyTo\":\"{$botContext.replyEmail}\",\"subject\":\"{$botContext.emailSubject}\",\"body\":\"{$botContext.emailText}\",\"htmlEmail\":true}",
+      "results": {
+        "type": "TEXT",
+        "tile": {
+          "tileData": [
+            {
+              "buttons": [],
+              "quickReplyList": []
+            }
+          ]
+        }
+      },
+      "group": "Responders",
+      "responseDataVariable": "Send_Email",
+      "integrationType": "EMAIL",
+      "tangoContextEnabled": false
+    }
+  ],
+  "requiredContext": [],
+  "conversationMessage": [
+    {
+      "id": "2257cf237ec31d041e02516d6db6b2e991e2f61a",
+      "chatBotId": "cf2bb86a-452c-4908-8576-f4ac62191c0a",
+      "name": "SEND EMAIL",
+      "type": "BOT_MESSAGE",
+      "content": {
+        "contentType": "DYNAMIC",
+        "responderName": "Send_Email",
+        "responderId": "fdc0383d-9b45-423f-a0ee-516f953dd615"
+      },
+      "preProcessMessage": "var apiStatusCode = getVariable('apiStatusCode');\nvar integrationName = getVariable('apiName');\nvar newEmailText = getEmailBody(integrationName, apiStatusCode);\nbotContext.setBotVariable('emailText', newEmailText);\n",
+      "group": "6f989dc9-0567-427d-8dec-74ce190317cd",
+      "status": "ACTIVE",
+      "required": true,
+      "prevMessageId": "f3bd3c636334feb09796a713d015cf38faed0262",
+      "responseMatches": [
+        {
+          "conditions": [],
+          "contextConditions": [],
+          "action": {
+            "name": "INTERACTION",
+            "value": "next"
+          },
+          "contextDataVariables": []
+        }
+      ],
+      "interactionType": "API_INTEGRATION",
+      "changeResponse": {
+        "enabled": true
+      },
+      "cancelResponse": {
+        "enabled": true
+      }
+    },
+    {
+      "id": "3ca6de45b47c9843197bf4bd0b30e07265b5ca7e",
+      "chatBotId": "cf2bb86a-452c-4908-8576-f4ac62191c0a",
+      "name": "WELCOME_INIT",
+      "pattern": [
+        "hi",
+        "hello",
+        "howdy",
+        "(hi|hello|hey)*"
+      ],
+      "type": "BOT_MESSAGE",
+      "content": {
+        "contentType": "STATIC",
+        "results": {
+          "type": "DIALOG_STARTER",
+          "tile": {
+            "tileData": [
+              {
+                "buttons": [],
+                "quickReplyList": []
+              }
+            ],
+            "sampleUserInput": "Welcome to this bot!"
+          }
+        }
+      },
+      "preProcessMessage": "var d = new Date(); \nif (botContext.getBotVariable('lastVisited') != null) { \n    botContext.setTriggerNextMessage('Welcome Back');\n} else { \n    botContext.setBotVariable('lastVisited',d,false,true); \n}",
+      "group": "3ce44284-c81f-4df2-a307-6a20032bdd4e",
+      "status": "ACTIVE",
+      "nextMessageId": "a26c79489be5537b977de68e34c7a51a3379f81e",
+      "responseMatches": [
+        {
+          "conditions": [],
+          "contextConditions": [],
+          "action": {
+            "name": "INTERACTION",
+            "value": "next"
+          },
+          "contextDataVariables": []
+        }
+      ],
+      "interactionType": "DIALOG_STARTER"
+    },
+    {
+      "id": "3e4aae9a6fc6eeb015257c255df9577b22ba018e",
+      "chatBotId": "cf2bb86a-452c-4908-8576-f4ac62191c0a",
+      "name": "api_integration_16",
+      "type": "BOT_MESSAGE",
+      "content": {
+        "contentType": "DYNAMIC",
+        "responderName": "StoreLocator",
+        "responderId": "bbb30a80-5223-4b3b-84a0-8a2d6a242371"
+      },
+      "postProcessMessage": "// Retrieve status code from API call\nvar apiStatusCode = botContext.getApiStatusCode();\n// Set status code and name of integration as bot variables.\nsetVariable('apiStatusCode', apiStatusCode);\nsetVariable('apiName', 'Store_Locator');",
+      "group": "3ce44284-c81f-4df2-a307-6a20032bdd4e",
+      "status": "ACTIVE",
+      "required": true,
+      "nextMessageId": "695f5a54ac843d3f881fb63773c5b3d6d11513d9",
+      "prevMessageId": "a26c79489be5537b977de68e34c7a51a3379f81e",
+      "responseMatches": [
+        {
+          "name": "Success",
+          "conditions": [
+            {
+              "matchType": "API_RESULT",
+              "apiResultsMatch": {
+                "status": "SUCCESS"
+              }
+            }
+          ],
+          "contextConditions": [],
+          "contextMatchConditionType": "ANY",
+          "action": {
+            "name": "INTERACTION",
+            "value": "next"
+          },
+          "contextDataVariables": []
+        },
+        {
+          "name": "Failure",
+          "conditions": [
+            {
+              "matchType": "API_RESULT",
+              "apiResultsMatch": {
+                "status": "FAILURE"
+              }
+            }
+          ],
+          "contextConditions": [],
+          "contextMatchConditionType": "ANY",
+          "action": {
+            "name": "INTERACTION",
+            "value": "f3bd3c636334feb09796a713d015cf38faed0262"
+          },
+          "contextDataVariables": []
+        }
+      ],
+      "interactionType": "API_INTEGRATION",
+      "changeResponse": {
+        "enabled": true
+      },
+      "cancelResponse": {
+        "enabled": true
+      }
+    },
+    {
+      "id": "695f5a54ac843d3f881fb63773c5b3d6d11513d9",
+      "chatBotId": "cf2bb86a-452c-4908-8576-f4ac62191c0a",
+      "name": "text_17",
+      "type": "BOT_MESSAGE",
+      "content": {
+        "contentType": "STATIC",
+        "results": {
+          "type": "TEXT",
+          "tile": {
+            "tileData": [
+              {
+                "text": "Congrats! You've made a successful API call\nAPI Response: {$botContext.apiStatusCode}",
+                "buttons": [],
+                "quickReplyList": []
+              }
+            ]
+          }
+        }
+      },
+      "group": "3ce44284-c81f-4df2-a307-6a20032bdd4e",
+      "status": "ACTIVE",
+      "required": true,
+      "prevMessageId": "3e4aae9a6fc6eeb015257c255df9577b22ba018e",
+      "responseMatches": [
+        {
+          "name": "RULE_1",
+          "conditions": [],
+          "contextConditions": [],
+          "action": {
+            "name": "INTERACTION",
+            "value": "next"
+          },
+          "contextDataVariables": []
+        }
+      ],
+      "interactionType": "TEXT"
+    },
+    {
+      "id": "954168d65f4a59bceb32bd470abb6872abf45269",
+      "chatBotId": "cf2bb86a-452c-4908-8576-f4ac62191c0a",
+      "name": "FALLBACK_MESSAGE",
+      "type": "BOT_MESSAGE",
+      "content": {
+        "contentType": "STATIC",
+        "results": {
+          "type": "TEXT",
+          "tile": {
+            "tileData": [
+              {
+                "text": "I couldn't catch that. Could you try again, please?",
+                "buttons": [],
+                "quickReplyList": []
+              }
+            ]
+          }
+        }
+      },
+      "group": "16eb1315-43ab-4571-941a-c2b80c50f778",
+      "status": "ACTIVE",
+      "required": true,
+      "responseMatches": [
+        {
+          "conditions": [],
+          "contextConditions": [],
+          "action": {
+            "name": "INTERACTION",
+            "value": "next"
+          },
+          "contextDataVariables": []
+        }
+      ],
+      "interactionType": "TEXT"
+    },
+    {
+      "id": "a26c79489be5537b977de68e34c7a51a3379f81e",
+      "chatBotId": "cf2bb86a-452c-4908-8576-f4ac62191c0a",
+      "name": "WELCOME_BODY",
+      "type": "BOT_MESSAGE",
+      "content": {
+        "contentType": "STATIC",
+        "results": {
+          "type": "MULTIPLE_CHOICE_QUESTION",
+          "tile": {
+            "tileData": [
+              {
+                "text": "Do you want to demonstrate a successful API call or a failure?",
+                "buttons": [],
+                "multipleChoice": {
+                  "multipleChoices": [
+                    "Success",
+                    "Failure"
+                  ],
+                  "displayChoice": "BUTTON",
+                  "textStyle": "NUMBERS"
+                },
+                "quickReplyList": []
+              }
+            ]
+          }
+        }
+      },
+      "group": "3ce44284-c81f-4df2-a307-6a20032bdd4e",
+      "status": "ACTIVE",
+      "required": true,
+      "nextMessageId": "3e4aae9a6fc6eeb015257c255df9577b22ba018e",
+      "prevMessageId": "3ca6de45b47c9843197bf4bd0b30e07265b5ca7e",
+      "responseMatches": [
+        {
+          "name": "Fail",
+          "conditions": [
+            {
+              "matchType": "EVAL_OPTION",
+              "evaluateOptionMatch": {
+                "value": "Failure"
+              }
+            }
+          ],
+          "contextConditions": [],
+          "contextMatchConditionType": "ANY",
+          "action": {
+            "name": "INTERACTION",
+            "value": "next"
+          },
+          "contextDataVariables": [
+            {
+              "name": "endpoint",
+              "value": "bad url endpoint",
+              "scope": "SESSION"
+            }
+          ]
+        },
+        {
+          "name": "Success",
+          "conditions": [
+            {
+              "matchType": "EVAL_OPTION",
+              "evaluateOptionMatch": {
+                "value": "Success"
+              }
+            }
+          ],
+          "contextConditions": [],
+          "contextMatchConditionType": "ANY",
+          "action": {
+            "name": "INTERACTION",
+            "value": "next"
+          },
+          "contextDataVariables": [
+            {
+              "name": "endpoint",
+              "value": "1",
+              "scope": "SESSION"
+            }
+          ]
+        }
+      ],
+      "interactionType": "MULTIPLE_CHOICE_QUESTION",
+      "interactionDelay": "1000"
+    },
+    {
+      "id": "f3bd3c636334feb09796a713d015cf38faed0262",
+      "chatBotId": "cf2bb86a-452c-4908-8576-f4ac62191c0a",
+      "name": "Failed API starter",
+      "type": "BOT_MESSAGE",
+      "content": {
+        "contentType": "STATIC",
+        "results": {
+          "type": "TEXT",
+          "tile": {
+            "tileData": [
+              {
+                "text": "There was an issue with your API call. An email will be sent to the address on file.\nAPI Response: {$botContext.apiStatusCode}",
+                "buttons": [],
+                "quickReplyList": []
+              }
+            ]
+          }
+        }
+      },
+      "group": "6f989dc9-0567-427d-8dec-74ce190317cd",
+      "status": "ACTIVE",
+      "required": true,
+      "nextMessageId": "2257cf237ec31d041e02516d6db6b2e991e2f61a",
+      "responseMatches": [
+        {
+          "name": "RULE_1",
+          "conditions": [],
+          "contextConditions": [],
+          "action": {
+            "name": "INTERACTION",
+            "value": "next"
+          },
+          "contextDataVariables": []
+        }
+      ],
+      "interactionType": "TEXT"
+    }
+  ],
+  "menus": [],
+  "groups": [
+    {
+      "chatBotId": "cf2bb86a-452c-4908-8576-f4ac62191c0a",
+      "id": "16eb1315-43ab-4571-941a-c2b80c50f778",
+      "name": "Fallback",
+      "creationTime": "2020-10-14 18:20:40",
+      "modificationTime": "2020-10-14 18:20:40",
+      "dialogType": "FALLBACK_DIALOG",
+      "status": "ENABLED",
+      "disambiguteOnlySelectedDomains": false
+    },
+    {
+      "chatBotId": "cf2bb86a-452c-4908-8576-f4ac62191c0a",
+      "id": "3ce44284-c81f-4df2-a307-6a20032bdd4e",
+      "name": "Welcome",
+      "creationTime": "2020-10-14 18:20:40",
+      "modificationTime": "2020-10-14 18:20:40",
+      "dialogType": "DIALOG",
+      "domainId": "dc275aaa-4ba4-4cd3-b7a1-782968a84e5f",
+      "status": "ENABLED",
+      "disambiguteOnlySelectedDomains": false
+    },
+    {
+      "chatBotId": "cf2bb86a-452c-4908-8576-f4ac62191c0a",
+      "id": "6f989dc9-0567-427d-8dec-74ce190317cd",
+      "name": "Catch API Failure",
+      "creationTime": "2020-10-14 18:29:54",
+      "modificationTime": "2020-10-14 18:29:54",
+      "dialogType": "DIALOG",
+      "status": "ENABLED",
+      "disambiguteOnlySelectedDomains": false
+    }
+  ],
+  "globalFunctions": {
+    "chatBotId": "cf2bb86a-452c-4908-8576-f4ac62191c0a",
+    "methods": "// Type values for the variables inside quotes. Don't forget to click on Save button after changes.\nfunction __initConversation(){  \n  // Email settings for email notifications can be edited here\n  setVariable('ownerEmail', 'dstoll@liveperson.com'); // Provide email to send information gathered by bot\n  setVariable('replyEmail', 'donotreply@gmail.com'); // Provide reply to email which is shown to the user\n  setVariable('emailSubject', 'API Error'); // Provide your email subject \n  var emailText = \"There was an issue with your API call\"; // Provide your email text \n  setVariable('emailText', emailText);\n\n  // conversation detail variables\n  var accountId = botContext.getLPAccountId();\n  var convId = botContext.getConversationId();\n  var userId = botContext.getUserPlatformId();\n\n  setVariable('accountId', accountId);\n  setVariable('convId', convId);\n  setVariable('userId', userId);\n}  \n\n// Helper functions to simplify getting and setting bot variables. These functions are used within pre/post process code blocks and should not be changed.\nfunction setVariable(variableName, variableValue) {\n  botContext.setBotVariable(variableName, variableValue, true, false);\n}\nfunction getVariable(variableName) {\n  var getVar = botContext.getBotVariable(variableName);\n  return getVar;\n}\n\n// Dynamically create email body using bot variables set from the results of our integration calls along with conversation variables pulled in at conversation init.\nfunction getEmailBody(apiName, statusCode) {\n  return \"<p>There was an issue with your API call from Conversation Builder</p><ul><li>Integration Name: \" + apiName + \"</li> <li>Error Code: \" + statusCode + \"</li> <li> Account ID: \" + getVariable('accountId') + \"</li><li>Conversation ID: \" + getVariable('convId') + \"</li><li>User ID: \" + getVariable('userId') + \"</li></ul>\";\n}\n\n",
+    "creationTime": "2020-10-14 18:20:41",
+    "modificationTime": "2020-11-02 14:17:32"
+  },
+  "platforms": [
+    {
+      "id": "daf4d98bfe71857ec64715abfec8e478a09e86b8",
+      "chatbotId": "cf2bb86a-452c-4908-8576-f4ac62191c0a",
+      "integrationType": "HTMLCLIENT",
+      "platform": "HTMLCLIENT",
+      "status": "NEW"
+    }
+  ],
+  "associatedDomains": [
+    {
+      "id": "dc275aaa-4ba4-4cd3-b7a1-782968a84e5f",
+      "name": "Retail",
+      "chatBotPlatformUserId": "10d4e7055c3c4082897f16c699a5032e",
+      "organizationId": "bcee2777-e7d0-4ab7-8262-ab53a28902e6",
+      "status": "ACTIVE",
+      "creationTime": "2020-05-06 13:22:38",
+      "modificationTime": "2020-05-06 13:22:38",
+      "modifiedBy": "10d4e7055c3c4082897f16c699a5032e",
+      "enableKeyPhraseMatch": false,
+      "keyPhraseMatchThreshold": 0,
+      "type": "Liveperson",
+      "nluShareDataAgree": false,
+      "acceptMaskedMessages": false,
+      "language": "en-US",
+      "domainOrigin": "USER",
+      "hasLiveIntents": false
+    }
+  ],
+  "dialogTemplates": []
+}
