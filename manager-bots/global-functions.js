@@ -1,19 +1,19 @@
 function __initConversation() { 
-	var badLanguageOccurances = 0;
+	var badLanguageOccurrences = 0;
 	var badLanguageThreshold = 3;
-	botContext.setBotVariable('badLanguageOccurances', badLanguageOccurances, true, false);
+	botContext.setBotVariable('badLanguageOccurrences', badLanguageOccurrences, true, false);
 	botContext.setBotVariable('badLanguageThreshold', badLanguageThreshold, true, false);
 }
 
 function processBadLanguage() {
-	var badLanguageOccurances = parseInt(botContext.getBotVariable('badLanguageOccurances'));
+	var badLanguageOccurrences = parseInt(botContext.getBotVariable('badLanguageOccurrences'));
 	var badLanguageThreshold = parseInt(botContext.getBotVariable('badLanguageThreshold'));
-	// Increment bad language occurance count
-	badLanguageOccurances++;
-	// Re-set bot occurance bot variable
-	botContext.setBotVariable('badLanguageOccurances', badLanguageOccurances, true, false);
+	// Increment bad language occurrence count
+	badLanguageOccurrences++;
+	// Re-set bot occurrence bot variable
+	botContext.setBotVariable('badLanguageOccurrences', badLanguageOccurrences, true, false);
 	// Direct to escalation interaction if threshold is reached
-	if (badLanguageOccurances >= badLanguageThreshold) {
+	if (badLanguageOccurrences >= badLanguageThreshold) {
 		botContext.setTriggerNextMessage('Escalate to agent');
 	}
 }
