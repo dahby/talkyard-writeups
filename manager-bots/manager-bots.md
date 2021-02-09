@@ -2,7 +2,9 @@
 Previously, if you wanted shared logic between all the different bots on an account, you would need to incorporate that logic into each and every bot. As this can be a time-consuming and error prone endeavor, one solution to this problem is to incorporate a Manager Bot for the account. Manager Bots can ensure that sensitive processes are handled by one central bot that can act on every conversation, regardless of the bot or human agent that is handling the issue of the user.
 
 ## What are manager bots?
-Manager bots are a feature of Conversation Builder which allow for a brand to have a single bot that joins and listens in to all active conversations for an account. These bots are built within Conversation Builder, just like any other automation, but are used in powerful ways to provide shared processes across all bots in an account. While the bots are created in the same ways that you would create any bot in Conversation Builder, the amount of power which they have by being added to every conversation requires thoughtful implementation and a strong understanding of how they operate. We highly recommend that you engage with the AI Engineering / ETS team before deploying these Bots to assist with reviewing suitability, planning & design.
+Manager bots are a feature of Conversation Builder which allow for a brand to have a single bot that joins and listens in to all active conversations for an account. These bots are built within Conversation Builder, just like any other automation, but are used in powerful ways to provide high-value, low-volume processes across all bots in an account. While the bots are created in the same ways that you would create any bot in Conversation Builder, the amount of power which they have by being added to every conversation requires thoughtful implementation and a strong understanding of how they operate. We highly recommend that you engage with the AI Engineering / ETS team before deploying these Bots to assist with reviewing suitability, planning & design.
+
+> Note: Please see the 'Important Considerations in Dealing with Manager Bots' section at the bottom of this guide for more details on important points to keep in mind.
 
 ## Building a "Bad Language" Bot
 For this guide, we will demonstrate the manager bot's capabilities by creating a "Bad Language" bot, which will listen for specific phrases that involve swears or curse words. When these events occur, our bot will speak up to remind the user to refrain from using that kind of language with our agents. After 3 occurrences of bad language, we will then escalate to a human agent who has been trained to appropriately handle such customers. While this is a relatively simple use case, it will serve to show the capabilities of our manager bot which can be customized to fit your brand's unique needs.  
@@ -16,6 +18,8 @@ As with many bot solutions, the first step to building a manager bot will be to 
 ![](bot-user-config.png)
 
 As these bots will potentially be joining into and engaging with users on behalf of the brand, special care should be shown to the naming of the bot. As you wouldn't want a bot named "Abusive Customer bot" speaking to the users, it is recommended that a generic, brand specific name be given to your bot, ex: Big Bank Brand Bot. 
+
+> When deploying a standard consumer-facing Bot, it is recommended that at least 2 CC (Conversational Cloud) agents are connected to your Bot for fault tolerance. As a Manager Bot ’joins’ every messaging conversation however, only a single CC agent should be connected to your Bot. If 2 CC agents were connected, the Bot would duplicate every action, leading to complications and unexpected behaviour. 
 
 ### Create the Bot
 In Conversation Builder, create a new bot using the *Custom Bot* template. Give it a name and description and click **Create Bot** to start with our standard template.
@@ -90,3 +94,35 @@ After you've started up your manager bot, navigate to a page that you have deplo
 
 ![](messaging-window-1.png) ![](messaging-window-2.png)
 ![](agent-workspace.png)
+
+## Important Considerations in Dealing with Manager Bots
+As mentioned above, due to the power of Manager Bots, it is highly recommend that you work with representatives of the AI Engineering / ETS teams when developing your Manager Bot solutions. Here, we've listed some important considerations to make when implementing these solutions.
+
+### Manager Bots per account
+As a ‘Manager Bot’ will join every messaging conversation on the account, it is also strongly recommended that only 1 Manager Bot is deployed per Conversational Cloud account.
+If 2 separate Manager Bots were live on the account and joining every conversation, this again would lead to complexity in managing bot automations and possible adverse behaviour.
+
+### Capacity, Filtering & Rate Limiting
+While the bot ‘listens’ to conversations, it will process every message it receives (just like any other bot), and it is likely that it will only ever take action on a small percentage of conversations. This drives significant server load, with the Bot processing a significant volume of messages that are irrelevant to the use-case for which it is designed.
+
+Bots are also subject to Rate-limiting, which means they may stop responding temporarily if there are sudden bursts of consumer messages across the account - which means your Bot could miss the one consumer message that was actually critical.
+
+To minimise the strain on Manager Bots, `filterPatterns` **must** be added to the customer configuration. This will filter out irrelevant consumer messages, only forwarding on messages to the Bot will match your regex.
+This should be broad enough to allow messages through to the Bot, but also narrow enough to filter out obviously irrelevant messages.
+
+### Error Messages
+Conversation Builder Bots may send a message when they receive an unmatched phrase, or encounter an error - such as when an API response is received with a non-200 status.
+Generally, we want our Manager Bots to be ‘silent observers’ of a conversation, and only taking action when triggered. To avoid these types of error messages being published in a conversation, the following custom configurations should be when deploying your agent connector:
+
+| Key | Value |
+| --- | --- |
+| `ignoreAcceptStatusEvent` | `true` |
+| `subscribeToMainDialogOnly` | `true` |
+| `ignoreSubscribeMessagingEvent` | `true` |
+
+### API Integrations
+If your manager bot is leveraging an API integration, ensure that 'success' and 'fail' rules are configured, as per the screen shot below.
+
+![](api-next-actions.png)
+
+> Note: If the API integration is a critical part of the process, you may want to implement an alert process, where an email is sent to your brand’s inbox alerting to the failure and including conversation details (such as conversation ID). For details on how to do this, see this [guide](https://talkyard.livepersonai.com/-78/guide-notify-via-email-on-api-failure).
