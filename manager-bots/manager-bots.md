@@ -15,7 +15,7 @@ This guide assumes you have at least one bot that is deployed through the Conver
 ### Setting up the bot user agent
 As with many bot solutions, the first step to building a manager bot will be to create a Bot User Agent that can be deployed across the account. Follow the same steps that you would when creating a standard bot agent (details on this process can be found in our [developers documentation](https://developers.liveperson.com/tutorials-guides-getting-started-with-bot-building-deploy-the-bot.html#step-13-create-a-bot-user)). The only deviation from what is explained in the documentation is we want to ensure you have given the appropriate role of *Agent Manager* to your Bot User profile, as this will allow the bot to join into and participate in agent conversations. 
 
-![](bot-user-config.png)
+<!-- ![](bot-user-config.png) -->
 
 As these bots will potentially be joining into and engaging with users on behalf of the brand, special care should be shown to the naming of the bot. As you wouldn't want a bot named "Abusive Customer bot" speaking to the users, it is recommended that a generic, brand specific name be given to your bot, ex: Big Bank Brand Bot. 
 
@@ -28,7 +28,7 @@ In this use case, our manager bot will serve a single purpose of handling bad la
 
 When we deploy this bot, we will add a custom configuration called `filterPatterns` to ensure that our manager bot is not processing every single message from a user. However, it is still recommended that we modify the *2 Fallback* dialog to display a blank message in the unlikely event that a message passes the `filterPatterns` configuration and isn't recognized by a dialog starter. To do so, replace the *fallback_starter* text to read `BLANK_MESSAGE`.
 
-![](fallback.png)
+<!-- ![](fallback.png) -->
 
 #### Global Functions
 To assist us with logging the number of bad language occurrences from our users, add the following custom code into the Global Functions code editor:
@@ -78,12 +78,12 @@ processBadLanguage();
 
 Next, add an *Agent Transfer* interaction with a transfer message and skill ID to correspond to a human agent that can handle these types of situations. Make sure to name the interaction `Escalate to agent` to match with the `setTriggerNextMessage` value in our `processBadLanguage` function.
 
-![](bad-language-dialog.png)
+<!-- ![](bad-language-dialog.png) -->
 
 ### Deploy the Manager Bot
 Navigate to the *Agent Connectors* section and click **Add Agent Connector**. Select the Bot Agent we created above from the *Agent User ID* dropdown and `Manager` from the *Role* dropdown. Before saving, expand the *Advanced Options* menu and select the **Plus** button next to *Custom Configurations*. Here, enter `filterPatterns` as the key and the following regex as the value: `(crap|baloney|fugly|stupid|malarkey)`. By entering this custom configuration, we ensure that our manager bot will only process utterances which pass the regex. This is an important step, as we want to limit the number of messages that our manager bot has to process from every conversation.
 
-![](add-agent-connector.png)
+<!-- ![](add-agent-connector.png) -->
 
 > Note: If you plan on using debug phrases with your manager bot, such as *reset* and *display userid*, you will need to add these as regex to your `filterPatterns` list. Failing to do so will result in your manager bot not recognizing these commands.
 
@@ -92,8 +92,8 @@ Once you've added the Agent Manager Connector, pushing the **> Start** button wi
 ### Test the Manager Bot
 After you've started up your manager bot, navigate to a page that you have deployed a bot from your account to. Communicating with your bot, you should not see any change unless you type in a phrase that matches one of the `filterPatterns` defined above. To test the Manager Bot functionality, type in a phrase with one of the *bad language* words we defined. Doing so should result in the bad language dialog being triggered, in addition to the standard bot's message. Continue to do so two more times to confirm that the logic in our escalation function is working properly.
 
-![](messaging-window-1.png) ![](messaging-window-2.png)
-![](agent-workspace.png)
+<!-- ![](messaging-window-1.png) ![](messaging-window-2.png)
+![](agent-workspace.png) -->
 
 ## Important Considerations in Dealing with Manager Bots
 As mentioned above, due to the power of Manager Bots, it is highly recommend that you work with representatives of the AI Engineering / ETS teams when developing your Manager Bot solutions. Here, we've listed some important considerations to make when implementing these solutions.
@@ -123,6 +123,6 @@ Generally, we want our Manager Bots to be ‘silent observers’ of a conversati
 ### API Integrations
 If your manager bot is leveraging an API integration, ensure that 'success' and 'fail' rules are configured, as per the screen shot below.
 
-![](api-next-actions.png)
+<!-- ![](api-next-actions.png) -->
 
 > Note: If the API integration is a critical part of the process, you may want to implement an alert process, where an email is sent to your brand’s inbox alerting to the failure and including conversation details (such as conversation ID). For details on how to do this, see this [guide](https://talkyard.livepersonai.com/-78/guide-notify-via-email-on-api-failure).
