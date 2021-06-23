@@ -164,3 +164,7 @@ We can now responsibly query for data from the Context Service for use within Co
 ## Conclusion
 
 We are now able to responsibly use the data from our reporting dashboard API to make decisions in our bot automations. While the specific use case may vary based on the needs of your brand, the steps outlined in this guide provide a foundation to query this data and make appropriate routing and expectation-setting decisions for your users.
+
+### Changelog
+
+06/23/2021 - Updated FaaS function to use Conversation Context Service toolbelt methods instead of using HTTP Client - Updated naming conventions and code styling for consistency.
