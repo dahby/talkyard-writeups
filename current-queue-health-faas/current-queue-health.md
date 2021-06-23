@@ -107,7 +107,8 @@ function lambda(input, callback) {
   }
 
   main();
-}```
+}
+```
 
    * Using the Secret Storage, Context Service, and LP Clients from the `lp-faas-toolbelt` package, this function calls the current queue health API and passes that to a function to call and update the Conversation Context Service.
 
