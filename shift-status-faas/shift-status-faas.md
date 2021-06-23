@@ -1,6 +1,6 @@
 # Caching Shift Status API Data w/ FaaS & Conversation Context Service
 
-This guide is meant to supplement [Caching Current Queue Health APIs w/ FaaS & Conversation Context Service](https://talkyard.livepersonai.com/-72/caching-current-queue-health-apis-w-faas-conversation-context-service). The concepts and core functionality are all the same, however, because the [Shift Status API](https://developers.liveperson.com/shift-status-api-methods-get-shift-status-by-account.html), along with some other APIs are not supported by the FaaS Toolbelt's `lpClient` method, this guide will highlight where changes need to be made in your approach. Please see the original linked post for details on setting up the Conversation Context Service and understanding how to schedule the FaaS function.
+This guide is meant to supplement [Caching Current Queue Health APIs w/ FaaS & Conversation Context Service](https://talkyard.livepersonai.com/-18/caching-current-queue-health-apis-w-faas-the-context-session-store). The concepts and core functionality are all the same, however, because the [Shift Status API](https://developers.liveperson.com/shift-status-api-methods-get-shift-status-by-account.html), along with some other APIs are not supported by the FaaS Toolbelt's `lpClient` method, this guide will highlight where changes need to be made in your approach. Please see the original linked post for details on setting up the Conversation Context Service and understanding how to schedule the FaaS function.
 
 ## Preparation to use Login API
 
@@ -53,109 +53,113 @@ Using the same process as the previous guide, create a new function to pull down
 
 ```js
 function lambda(input, callback) {
- // Importing the FaaS Toolbelt
- const { Toolbelt } = require("lp-faas-toolbelt");
- // Obtain an HTTPClient Instance from the Toolbelt
- const httpClient = Toolbelt.HTTPClient(); // For API Docs look @ https://www.npmjs.com/package/request-promise
- // Obtain a secretClient instance from the Toolbelt to access your saved Conversation Orchestrator key
- const secretClient = Toolbelt.SecretClient();
+  // Importing the FaaS Toolbelt
+  const { Toolbelt } = require("lp-faas-toolbelt");
+  // Obtain an HTTPClient Instance from the Toolbelt
+  const httpClient = Toolbelt.HTTPClient(); // For API Docs look @ https://www.npmjs.com/package/request-promise
+  // Obtain a secretClient instance from the Toolbelt to access your saved Conversation Orchestrator key
+  const secretClient = Toolbelt.SecretClient();
+  //  set your account number here
+  const accountId = '';
 
- //  set your account number here
- const accountNumber = ''
+  // The domain & URL to access each resource is environment-specific according to your account number. Use https://developers.liveperson.com/api-guidelines-domain-api.html and enter your account number to retrieve the domain for the referenced resource for each variable
 
- const loginURL = `https://va.agentvep.liveperson.net/api/account/${accountNumber}/login?v=1.3`;
- const shiftStatusURL = `https://va.msg.liveperson.net/api/account/${accountNumber}/shift-status`;
- const contextWarehouseURL = `https://z1.context.liveperson.net/v1/account/${accountNumber}/shift-status-api/properties`
+  const loginDomain = 'va.agentvep.liveperson.net'; //resource: 'agentVep'
+  const shiftStatusDomain = 'va.msg.liveperson.net'; //resource: 'asyncMessagingEnt'
 
-// retrieve secrets from secret store
-async function fetchSecret(key) {
- const secret = await secretClient.readSecret(key);
- return secret.value;
-}
+  const loginURL = `https://${loginDomain}/api/account/${accountId}/login?v=1.3`;
+  const shiftStatusURL = `https://${shiftStatusDomain}/api/account/${accountId}/shift-status`;
 
-// log bot user in to obtain bearer token and pass to shiftStatusByAccount function
-async function loginBotUser() {
- const loginCredentials = await fetchSecret('loginCredentials');
- httpClient(loginURL, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
-  },
-  simple: false,
-  json: true,
-  resolveWithFullResponse: false,
-  body: loginCredentials
- })
- .then(response => {
-  console.info('Successfully returned data from login api');
-  const bearerToken = response.bearer;
-  shiftStatusByAccount(bearerToken);
- })
- .catch(err => {
-  console.error(err);
-  callback(err);
- });
-}
+  // Variables for Conversation Context Service
+  const namespace = ''; // name of the namespace
+  const sessionId = '' || undefined; // optional: if not provided will use default session
 
- // use bearer token to access shift status by account api, format the data, and pass to updateContextWarehouse function
- function shiftStatusByAccount(token) {
-  httpClient(shiftStatusURL, {
-   method: 'GET',
-   headers: {
-     'Authorization': `Bearer ${token}`
-   },
-   simple: false,
-   json: true,
-   resolveWithFullResponse: false
-  })
-  .then(response => {
-   console.info('Successfully returned data from shift status by account api');
-   const formattedResponse = formatShiftStatusData(response);
-   updateContextWarehouse(formattedResponse);
-  })
-  .catch(err => console.error(err));
- }
+  // retrieve secrets from secret store
+  async function fetchSecret(key) {
+    try {
+      const secret = await secretClient.readSecret(key);
+      return secret.value;
+    } catch(err) {
+      console.error('err: ' + err);
+    }
+  }
 
- // update global context of context session store at shift-status-api namespace
- async function updateContextWarehouse(shiftStatusData) {
-  const mavenApiKey = await fetchSecret('mavenApiKey');
-  httpClient(contextWarehouseURL, {
-   method: 'PATCH',
-   headers: {
-     'Content-Type': 'application/json',
-     'maven-api-key': mavenApiKey
-   },
-   body: shiftStatusData,
-   simple: false,
-   json: true,
-   resolveWithFullResponse: false
-  })
-  .then(() => {
-   callback(null, 'Successfully updated Conversation Context Service');
-  })
-  .catch(err => {
-   console.error(err);
-   callback(err);
-  })
- }
+  // log bot user in to obtain bearer token and pass to shiftStatusByAccount function
+  async function loginBotUser(loginCredentials) {
+    try {
+      const response = await httpClient(loginURL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        },
+        simple: false,
+        json: true,
+        resolveWithFullResponse: false,
+        body: loginCredentials
+      })
+      return response.bearer;
+    } catch(err) {
+      callback(err);
+    }
+  }
 
- // Format the result to add a timestamp as well as use skill id as key in global context store to make accessing skill id information easier.
- function formatShiftStatusData(shiftStatusData) {
-  const currentTime = new Date();
-  const formattedData= {timestamp: currentTime};
+  // use bearer token to access shift status by account api, format the data, and pass to updateContextWarehouse function
+  async function shiftStatusByAccount(token) {
+    try {
+      const response = await httpClient(shiftStatusURL, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        },
+        simple: false,
+        json: true,
+        resolveWithFullResponse: false
+      })
+      return formatShiftStatusData(response);
+    } catch(err) {
+      callback(err);
+    }
+  }
 
+  // update global context of context session store at shift-status-api namespace
+  async function updateConversationContextService(keyValuePair, secret) {
+    const contextClient = Toolbelt.ContextServiceClient({ apiKey: secret, accountId: accountId });
+    try {
+      const sessionProperties = await contextClient.updatePropertiesInNamespace(namespace, keyValuePair, sessionId);
+      console.info(sessionProperties);
+      callback(null, `Successfully updated Context Service`);
+    } catch(err) {
+      callback(err);
+    }
+  }
 
-  shiftStatusData.forEach(skill => {
-   const dataObj = skill;
-   formattedData[skill.skillId] = dataObj;
-  })
+  // Format the result to add a timestamp as well as use skill id as key in global context store to make accessing skill id information easier.
+  function formatShiftStatusData(shiftStatusData) {
+    const currentTime = new Date();
+    const formattedData= {timestamp: currentTime};
 
-  return formattedData;
- }
+    shiftStatusData.forEach(skill => {
+      const dataObj = skill;
+      formattedData[skill.skillId] = dataObj;
+    })
 
- // run loginBotUser function
- loginBotUser();
+    return formattedData;
+  }
+
+  async function main() {
+    // Retrieve from Secret Storage
+    const loginCredentials = await fetchSecret('loginCredentials');
+    const mavenApiKey = await fetchSecret('mavenApiKey');
+    // Retrieve Bearer Token
+    const bearerToken = await loginBotUser(loginCredentials);
+    // Retrieve Shift status data
+    const shiftStatusData = await shiftStatusByAccount(bearerToken);
+    // Update CCS
+    updateConversationContextService(shiftStatusData, mavenApiKey);
+  }
+
+  main()
 }
 ```
 
@@ -169,5 +173,8 @@ As you can see, we now have a collection of keys in the global scope of our Cont
 
 With our function built out and working, set it to a schedule to periodically cache the shift status information in the Conversation Context Service. Once that scheduled FaaS is running, you can pass the namespace and skill ID you want to check to the `getGlobalContextData` function to pull the relevant information into your bot. This will allow you to run a check prior to escalating to a skill to ensure the best possible experience for your users. Please see the attached articles for more information on ways to use the Conversation Context Service and reporting dashboard functions to improve your bot solutions.
 
-[Manage the Conversation Context Service w/ Conversation Builder](https://talkyard.livepersonai.com/-84/guide-manage-the-conversation-context-service-w-conversation-builder)
-[Caching Current Queue Health APIS w/ FaaS & Conversation Context Service](https://talkyard.livepersonai.com/-72/caching-current-queue-health-apis-w-faas-conversation-context-service)
+[Caching Current Queue Health APIS w/ FaaS & Conversation Context Service](https://talkyard.livepersonai.com/-18/caching-current-queue-health-apis-w-faas-the-context-session-store)
+
+### Changelog
+
+06/23/2021 - Updated FaaS function to use Conversation Context Service toolbelt methods instead of using HTTP Client - Updated naming conventions and code styling for consistency.
