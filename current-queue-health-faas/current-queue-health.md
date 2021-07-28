@@ -5,13 +5,16 @@ LivePerson provides a number of APIs which are designed to be used with Reportin
 This guide is intended to provide an alternative to calling these APIs at every conversation. By using several Conversational Cloud services in conjunction with one another to regularly cache needed data, we can make this information accessible in a more robust service that is properly scaled to handle the volume of calls from each conversation.
 
 ## Prerequisites
+
 This guide assumes that you have access to the following:
+
 * Conversation Builder
 * Conversation Orchestrator
 * FaaS
 * An API client, such as [Postman](https://www.postman.com/)
 
 ## Overview
+
 This guide will cover the following steps to provide access to data from the [Messaging Current Queue Health API](https://developers.liveperson.com/messaging-operations-api-methods-messaging-current-queue-health.html):
 
 1. Create a new namespace in the Conversation Context Service to serve as our cache.
@@ -44,16 +47,16 @@ The [Context Session Store](https://developers.liveperson.com/conversation-orche
    * **Template**: Greeting Template
    * **Access to external domains?**: No
 
-	Click *Continue*
+  Click *Continue*
 
 5. Complete the *Function Description* section with the following:
    * **Function Name**: currentQueueHealth
    * **Description**: Retrieve current queue info on scheduled intervals and update a namespace in Conversation Context Service.
 
-	Click *Create Function*
-
+ Click *Create Function*
 
 6. In the resulting code editor screen, replace the existing code with the following:
+
 ```js
 function lambda(input, callback) {
   // Importing the FaaS Toolbelt
@@ -110,39 +113,40 @@ function lambda(input, callback) {
 }
 ```
 
-   * Using the Secret Storage, Context Service, and LP Clients from the `lp-faas-toolbelt` package, this function calls the current queue health API and passes that to a function to call and update the Conversation Context Service.
+* Using the Secret Storage, Context Service, and LP Clients from the `lp-faas-toolbelt` package, this function calls the current queue health API and passes that to a function to call and update the Conversation Context Service.
 
 7. After saving, deploy the function using the three-dot menu at the end of the function's row. Once deployed, invoke the function to test and ensure that it is working. If successful, the logs should read `Successfully updated Context Service`.
 8. Verify using Postman that the namespace and session have been updated in the Context Service. To test, provide the following details to your API client:
    * **Method**: `GET`
    * **URL**: `https://{baseUrl}/v1/account/{accountNumber}/{namespace}/properties`
-      *  Replace `{baseUrl}` with the correct URL for your environment, found [here](https://developers.liveperson.com/conversation-orchestrator-conversation-context-service-methods.html#rest-apis-overview).
-   	 * Replace `{accountNumber}` with your Conversational Cloud account number. 
-     * Replace `{namespace}` with the same namespace value you created in the FaaS function above
+      * Replace `{baseUrl}` with the correct URL for your environment, found [here](https://developers.liveperson.com/conversation-orchestrator-conversation-context-service-methods.html#rest-apis-overview).
+      * Replace `{accountNumber}` with your Conversational Cloud account number.
+      * Replace `{namespace}` with the same namespace value you created in the FaaS function above
 
-	* **Headers**: 
-		```
-		Content-Type: application/json
+   * **Headers**:
+  
+  ```js
+  Content-Type: application/json
 
-		maven-api-key: {mavenApiKey}
-		```
+  maven-api-key: {mavenApiKey}
+  ```
 
-    	* Replace `{mavenApiKey}` with your copied developer key from Conversation Orchestrator
+      * Replace `{mavenApiKey}` with your copied developer key from Conversation Orchestrator
 
     If successful, the call to the Context Service will display the results of the Messaging Current Queue Health API.
 
 9. Schedule the FaaS invocation by selecting the *Schedules* tab from the left-hand menu. Tap the *Create a schedule* button and select the newly deployed function from the resulting dropdown.
 10. Schedule the function invocation and whichever interval fits the use case for your brand. For this example, entering `/5` in the *Minutes* field will result in this function running and updating the Context Service every 5 minutes.
 
-With the function scheduled, we now have a session within our Context Service being updated with a reasonable approximation of the current queue health, including information on the estimated wait time. 
+With the function scheduled, we now have a session within our Context Service being updated with a reasonable approximation of the current queue health, including information on the estimated wait time.
 
 ## Access the Context Service data using Conversation Builder
 
 We can now responsibly query for data from the Context Service for use within Conversation Builder. The following example demonstrates using [Context Session Store methods](https://developers.liveperson.com/conversation-builder-scripting-functions-manage-the-context-session-store.html) to retrieve and display the relevant information.
 
-1. Ensure you have access to the Context API 
+1. Ensure you have access to the Context API
    * From the Conversational AI menu of the Conversational Cloud, navigate into *Bot Accounts* and select your account
-   * In *Account Details*, toggle the *Enable Context API* switch to *on* 
+   * In *Account Details*, toggle the *Enable Context API* switch to *on*
    * Select the *Use Conversational Cloud Site ID* option and enter your account number
 
 > Note: If you do not have access to this tool or process, contact your LivePerson account representative. Alternatively, Context Service data can be accessed via API integration, however, make sure to follow best practices in safeguarding secrets and API keys by taking advantage of environment variables.
@@ -158,7 +162,7 @@ We can now responsibly query for data from the Context Service for use within Co
     botContext.setBotVariable('awt', awt, true, false);
    ```
 
-  This code queries the Context Service for the messaging operations api data and retrieves the average wait time for the skill in question. This information can be useful in setting expectations for your users prior to escalation. 
+  This code queries the Context Service for the messaging operations api data and retrieves the average wait time for the skill in question. This information can be useful in setting expectations for your users prior to escalation.
 
 > Note: The screenshot above displays the call in a demo environment. ‘-1’ is the default value if there is no relevant data being returned, and as this is a demo deployment, there currently isn’t a wait time. However, by returning the -1 value, we can see that we are accessing the correct field in our data.
 
