@@ -5,6 +5,7 @@ API Failures happen. When they do, we may want to provide a method to notify a t
 A JSON file with the demonstration bot is included for reference. This guide starts off with a new bot using the Custom Bot template, which provides a Welcome and Fallback dialog to begin.
 
 ## Global Functions
+
 Starting in Global Functions allows us to define some bot variables along with some helper functions that will assist us in providing relevant information to our reporting destination.
 
 ```js
@@ -45,7 +46,9 @@ function getEmailBody(apiName, statusCode) {
 See the comments in the code for details. At a high level, we are creating bot variables that will be used in our email message, along with pulling in data about the conversation itself (user ID, conv ID, & account ID) which will be reported along with the API error. When testing, ensure that the `ownerEmail` variable is set to an address that you can monitor.
 
 ## Send Email Integration
+
 By setting the stage in Global Functions, we have greatly simplified the construction of the `Send_Email` integration. From the *Integrations* tab, create a new integration with the following details:
+
 * **Integration Name**: `Send_Email`
 * **Response Data Variable Name**: `Send_Email`
 * **Integration Type**: Email
@@ -56,37 +59,43 @@ By setting the stage in Global Functions, we have greatly simplified the constru
 * **Html Email**: Checked
 
 ## Store Locator Integration
+
 This bot also includes a `Store_Locator` integration that we will use to demonstrate both successful and unsuccessful API calls. This integration calls a mockapi.io url and appends a value on the end depending on whether we want to show a successful or unsuccessful attempt. The new integration details are as follows:
+
 * **Integration Name**: `Store_Locator`
 * **Response Data Variable Name**: `Store_Locator`
 * **Integration Type**: API
 * **Method**: GET
 * **URL**: `https://5ed69a5fc2ca2300162c67f1.mockapi.io/api/v1/stores/{$botContext.endpoint}`
 
-Note that we are appending a bot variable named `endpoint` at the end of the URL. The value of this variable will determine the success of our call. 
+Note that we are appending a bot variable named `endpoint` at the end of the URL. The value of this variable will determine the success of our call.
 
 Also note that we are not saving any custom data fields. For the purpose of this demonstration, we are not attempting to present any data from the API, we just want to see how to direct the flow based on success/failure.
 
 ## Dialog Setup
+
 Modify the existing welcome dialog to include an API call to our mock api and route based on the result.
 
 ### Welcome Dialog
+
 1. Add a Multiple Choice Question which reads:
+
    ```
     Do you want to demonstrate a successful API call or a failure?
     - Success
     - Failure
    ```
+
 2. Create two new custom rules in the *Next Action* section which correspond to each choice from options.
-   
+
      * **Rule Name**: `Success`
-   
-        **Add Condition**: `Evaluate Options` matches `Success` 
+
+        **Add Condition**: `Evaluate Options` matches `Success`
 
         **Add Variable**: `endpoint` with `1`
 
      * **Rule Name**: `Fail`
-   
+
         **Add Condition**: `Evaluate Options` matches `Failure`
 
         **Add Variable**: `endpoint` with `bad url endpoint`
@@ -94,6 +103,7 @@ Modify the existing welcome dialog to include an API call to our mock api and ro
       Depending on whether the user chooses `Success` or `Failure` will determine the value of the `endpoint` bot variable. Again, this value will be appended to the API URL in the Store Locator integration.
 
 3. Add a new Integration interaction and select the *Store_Locator* integration from the resulting dropdown. Select the *Custom Code* icon from the upper right of the interaction, navigate to the *Post-Process Code* section and paste the following code:
+
     ```js
     // Retrieve status code from API call
     var apiStatusCode = botContext.getApiStatusCode();
@@ -109,10 +119,12 @@ Modify the existing welcome dialog to include an API call to our mock api and ro
     We'll want to add some *Next Action* rules here to route differently based on the results. However, since the interactions we'll be routing to have not yet been created, we'll come back to this step shortly.
 
 4. Add a new Text statement that reads:
+
    ```
     Congrats! You've made a successful API call
     API Response: {$botContext.apiStatusCode}
    ```
+
     On a successful call, we'll notify the user that a successful call has been made and display the status code received.
 
 ### Catch API Failure Dialog
@@ -126,7 +138,7 @@ Create a new dialog for the purpose of catching failed API calls and sending an 
    Delete the provided *Dialog Starter* interaction, as this dialog will be explicitly directed to in the *Next Action* of our API call.
 
 2. Add a new Text statement that reads:
-   
+
     ```
     There was an issue with your API call. An email will be sent to the address on file.
     API Response: {$botContext.apiStatusCode}
@@ -135,6 +147,7 @@ Create a new dialog for the purpose of catching failed API calls and sending an 
     Rename this interaction `Failed API starter`.
 
 3. Add a new Integration interaction and select the *Send_Email* integration from the resulting dropdown. Select the *Custom Code* icon from the upper right of the interaction, navigate to the *Pre-Process Code* section and paste the following code:
+
     ```js
     // Retrieve previously saved bot variables
     var apiStatusCode = getVariable('apiStatusCode');
@@ -145,23 +158,25 @@ Create a new dialog for the purpose of catching failed API calls and sending an 
     ```
 
     In Global Functions, we had previously defined the `getEmailBody` function to dynamically create the body of the email we will send. Here, we use that function prior to making our `Send_Email` call.
-    
-### Update Next Action Rules 
+
+### Update Next Action Rules
+
 Navigate back to the Store_Locator Integration interaction in the Welcome Dialog and create two new *Custom Rules* with the following:
 
-  * **Rule Name**: `Success`
+* **Rule Name**: `Success`
 
-     **Add Condition**: `API Result` matches `Success` 
+     **Add Condition**: `API Result` matches `Success`
 
      **And go to**: Go To: Next Interaction
 
-  * **Rule Name**: `Failure`
+* **Rule Name**: `Failure`
 
      **Add Condition**: `API Result` matches `Failure`
 
      **And go to**: Go To: Catch API Failure -> Failed API starter
 
-With these rules in place, the conversation will route differently based on the success or failure of the *Store_Locator* integration. 
+With these rules in place, the conversation will route differently based on the success or failure of the *Store_Locator* integration.
 
 ## Testing
+
 Make sure to update the `ownerEmail` variable in Global Function to one that you are able to monitor. You can test the functionality in the previewer tool, however take note that the Account ID and Conversation ID will both return `null` values unless this bot is tested on a deployed site.
