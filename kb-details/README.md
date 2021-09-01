@@ -1,8 +1,3 @@
-<!-- Testing env
-Acct: 53615687
-Bot: 02
-KB: Retail KB -->
-
 # Using the Detail Field in Knowledge Base Articles
 
 The **summary** section in Knowledge Base articles is limited to 300 characters. This is not always going to be adequate to cover everything that needs to be relayed to the user. With this limitation, longer text content will need to be distributed between the **summary** and **detail** fields. I've created a simplistic example to show how this can be done in the **Add Article** form.
